@@ -374,7 +374,7 @@ function handles the lexical analysis of identifiers and keywords in our languag
       - `counter1` → Recognized as IDENTIFIER token type
 The function enables our scanner to properly handle both user-defined identifiers (like variable names) and language keywords, distinguishing between them based on the predefined keyword map.
    - Below is the helpful HashMap we use to compare our keys to find
-`
+```
  static {
         keywords = new HashMap<>();
         keywords.put("and",    AND);
@@ -394,7 +394,7 @@ The function enables our scanner to properly handle both user-defined identifier
         keywords.put("var",    VAR);
         keywords.put("while",  WHILE);
     }
-`     
+```    
 #### Everything else
 Any other characters result in undefined behavior and should be reported to the user
 ```
