@@ -358,3 +358,49 @@ private char peekNext()
                 Double.parseDouble(source.substring(start, current)));
   }
   ```
+#### `identifier()`
+function handles the lexical analysis of identifiers and keywords in our language. An identifier is any sequence of alphanumeric characters (including underscores) that begins with a letter or underscore.
+1. **Character Consumption** `while (isAlphaNumeric(peek())) advance();`
+   - Continues reading characters as long as they are letters, digits, or underscores
+   - For example, in a variable name like `counter1`, it will consume all characters until it hits a non-alphanumeric character
+2. **Lexeme Extraction** `String text = source.substring(start, current)`;
+   - Extracts the complete identifier text from the source code
+   - Example: For input `counter1 = 5`, it would extract `"counter1"`
+3. **Keyword Detection**TokenType `type = keywords.get(text);  if (type == null) type = IDENTIFIER;`
+   - Checks if the extracted text is a reserved keyword (like `if`, `while`, `for`)
+   - If it's not a keyword, marks it as a regular IDENTIFIER
+   - Example:
+      - `while` → Recognized as WHILE token type
+      - `counter1` → Recognized as IDENTIFIER token type
+The function enables our scanner to properly handle both user-defined identifiers (like variable names) and language keywords, distinguishing between them based on the predefined keyword map.
+   - Below is the helpful HashMap we use to compare our keys to find
+`
+ static {
+        keywords = new HashMap<>();
+        keywords.put("and",    AND);
+        keywords.put("class",  CLASS);
+        keywords.put("else",   ELSE);
+        keywords.put("false",  FALSE);
+        keywords.put("for",    FOR);
+        keywords.put("fun",    FUN);
+        keywords.put("if",     IF);
+        keywords.put("nil",    NIL);
+        keywords.put("or",     OR);
+        keywords.put("print",  PRINT);
+        keywords.put("return", RETURN);
+        keywords.put("super",  SUPER);
+        keywords.put("this",   THIS);
+        keywords.put("true",   TRUE);
+        keywords.put("var",    VAR);
+        keywords.put("while",  WHILE);
+    }
+`     
+#### Everything else
+Any other characters result in undefined behavior and should be reported to the user
+```
+   else
+   {
+       Lox.error(line, "Unexpected character.");
+   }
+   break;
+```
