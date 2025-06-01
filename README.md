@@ -38,7 +38,7 @@ Our next exciting adventure is turning our source code into meaningful pieces th
 ```java
 Scanner scanner = new Scanner(source);
 ```
-```C#
+```java
 private static void run(String source)
 {
     if(hadError) System.exit(65);
@@ -55,7 +55,7 @@ private static void run(String source)
 
 ### three tracking variables used for character count for Lexemes 
 
-```C#
+```
 // Starting character of the lexeme
 private int start = 0;
 // Current character of the lexeme being evaluated
@@ -69,7 +69,7 @@ private int line = 1;
 It's important to remember that this function ultimately returns a list of tokens. These tokens represent the smallest meaningful elements (lexemes) of the source code — such as identifiers, literals, operators, etc. This list will be consumed later by the parser.
 2. **Control Flow with the `while` Loop**
 3. The `while` loop controls how we move through the source code. It continues scanning tokens until we reach the end of the file. Here's the `isAtEnd()` function that helps determine when to stop:
-4. ```csharp
+4. ```java
    private boolean isAtEnd()
    {
        return current >= source.length();
@@ -80,7 +80,7 @@ It's important to remember that this function ultimately returns a list of token
    The `scanToken()` function is called every iteration of the loop. This function is where the actual work of identifying and creating tokens occurs — it examines the current character(s) and builds the appropriate `Token` object based on what it sees. We'll take a deep dive into `scanToken()` shortly, but for now, just know that it’s the core engine of the scanner.
 7. **Adding the End-of-File Token**
    Once we've scanned all tokens and exited the loop, we add an End-of-File (EOF) token:
-   ```csharp
+   ```
    tokens.add(new Token(EOF, "", null, line));
    ```
    This token is used to signal that no more tokens remain in the source. Parsers rely on this to know when they’ve reached the end of input.
@@ -89,7 +89,7 @@ It's important to remember that this function ultimately returns a list of token
 9. **Next Step: Diving into `scanToken()`**
    We’re making steady progress along the lexing and parsing path. The next big step is to dive into the `scanToken()` function itself. This is where all the real action happens — identifying keywords, numbers, operators, string literals, and more.
    Here’s the full `scanTokens()` function for reference:
-   ```csharp
+   ```java
    List<Token> scanTokens()
    {
        while (!isAtEnd())
@@ -121,7 +121,8 @@ It's important to remember that this function ultimately returns a list of token
 
 The complete reference code
 ```java
-private char advance() {
+private char advance() 
+{
     char c = source.charAt(current);
     current++;
     return c;
@@ -131,6 +132,7 @@ private char advance() {
 - Single character Lexemes are relatively easy. Remember we are not just creating lexemes. We identify a lexeme and create a token by assigning the lexeme a type. 
 - Remember `Token(TokenType type, String lexeme, Object literal, int line)` Dont be to concerend about the other paramaters as of now. The main point being, that we are finding the token type using the cases
   - Naturally we need to continue our journy by looking at how the `addToken()` function works. This leads to some intresting behavior like java overloading.
+    ```
     case '(': addToken(LEFT_PAREN); break;
     case ')': addToken(RIGHT_PAREN); break;
     case '{': addToken(LEFT_BRACE); break;
@@ -152,25 +154,24 @@ private char advance() {
     case '/':
     if (match('/'))
     {
-    // A comment goes until the end of the line.
-    while (peek() != '\n' && !isAtEnd()) advance();
+        while (peek() != '\n' && !isAtEnd()) advance();
     }
     else
     {
-    addToken(SLASH);
+        addToken(SLASH);
     }
     break;
-  -
-
+    ```
+    
 ### addToken() Function
 1. This is called a method override if only token type is passed then the literal is null. This is because These tokens have meaning through their type alone, and don't need to store any additional value.
 2. The actual function `addToken()` and its invocation type is determined during compile time based on the arguemnts that are passed to the function.
 3. If we call the first `addToken()` which will happen for the above cases, we pass in the type and a null literal
 
-```C#
+```java
 private void addToken(TokenType type)
 {
-addToken(type, null);
+    addToken(type, null);
 }
 ```
 1. This function can be invoked one of two ways. The wrapper function of the single argument `addToken()` or by a multi argument `addToken()`
@@ -183,18 +184,19 @@ addToken(type, null);
 8. `literal` This is what gives the lexeme meaning premoting it to token status. Remember we are creating lexemes then turning them into tokens in a single pass, efficency
 9. `line` Is for error reporting not a lot of intresting stuff here
 The full function of addToken()
-```C#
+```java
 private void addToken(TokenType type, Object literal)
 {
-// '(' would be start = 0 current = 1 so substring would be from 0-0 creating "("
-String text = source.substring(start, current);
-tokens.add(new Token(type, text, literal, line));
+    // '(' would be start = 0 current = 1 so substring would be from 0-0 creating "("
+    String text = source.substring(start, current);
+    tokens.add(new Token(type, text, literal, line));
 }
 ```
 
 ### Lexemes consisting of two characters. 
 - `>=` is not two tokens `> =` but actually one token consisting of two characters. There also exist a single token `>` and `=`. This leaves a key question how do we handle these cases approprately
 - Ergo the `match()` function. If the next character is not a match then we have a since instance of our token a `>`, but if the next symbol is a match we have a `>=`
+    ```
     case '!':
     addToken(match('=') ? BANG_EQUAL : BANG); break;
     case '=':
@@ -203,6 +205,7 @@ tokens.add(new Token(type, text, literal, line));
     addToken(match('=') ? LESS_EQUAL : LESS); break;
     case '>':
     addToken(match('=') ? GREATER_EQUAL : GREATER); break;
+  ```
 
 ### match() function
 - The `match()` function is the method that allows us to determine if we have a single or multicharacter lexeme. 
@@ -212,13 +215,146 @@ tokens.add(new Token(type, text, literal, line));
 3. This is where the actual matching occurs if the character we are currently at in our source file(**Remember we have already incremented current so we are at the next symbol**) Matches our expected. We have correctly identified our multi character lexeme.
 4. `current++` Is what consumes the symbol and allows us to start the next lexeme. See this is not a token quite yer until we invoke the `addToken()` method
 5. `return true;` If we find the expected symbol then
-
-### Full code snippet
-```C#
+```java
 private boolean match(char expected)
 {
-if (isAtEnd()) return false;
-if (source.charAt(current) != expected) return false;
-current++;
-return true;
+    if (isAtEnd()) return false;
+    if (source.charAt(current) != expected) return false;
+    current++;
+    return true;
 }
+```
+### Symbols that we can ignore
+- **Remember** if we do not envoke the `addToken()` method our symbol will be consumed without creating a token. This happens until we return a `EOF` token. 
+- The while loop will keep invoking the `scanToken()` function, which first calls the `advance()` function incrementing our current
+- This means that the cases that do not invoke `addToken()` will simply disregard the character as we do not create a lexeme from it.
+1. `case ' ':` Is for encountering white space, we simply consume the symbol.
+2. `case `\r`:` This symbol is used to print special symbols. Thus we should not create lexeme when this symbol is encounterd. 
+3. `case '\t'` Tabs dont mean anything to us thus we can disregard it.
+```
+case ' ': case '\r': case '\t':
+    break;
+```
+
+### The Cases Involving Strings
+- `case '"': string(); break;` the case "" may seem confusing is it '''' or "" or '"' believe it or not they are all different.
+- The `' " '` had the space dramatized to show what this actually means. We have a case to detect the begining of a string. Thus `''` is required to wrap a character.
+- Since strings begin with `"` we then create `'"'` and that denotes a case in which we encounter the first qoutes `"`
+1. while (peek() != '"' && !isAtEnd()) while the next character is not the closing qoutations `'"'` and we are not at the end we can continue to loop
+2. The `peek()` function simply returns the next character with out consuming the symbol. This is used to look for the ending of the string  
+```
+private char peek()
+{
+  if (isAtEnd()) return '\0';
+  return source.charAt(current);
+} 
+```
+3. `if (peek() == '\n') line++;` If we encounter a new line symbol simply increment which line we are on
+4. `advance();` strings dont contain lexems, they are a lexeme. So just continue to advance through the symbol
+5. If our string does not end our user forgot to finish the string. Lets make sure to give them a helpful hint 
+`if (isAtEnd())
+        {
+            Lox.error(line, "Unterminated string.");
+            return;
+        }`
+6. `advance();` Once the while group breaks and we know the next character is the end of the string. Lets advance to that symbol
+7. `String value = source.substring(start + 1, current - 1);` We now create our string from our source file preparing it to be tokenized.
+```
+// If source contains: "hello"
+//                     ^    ^
+//                start    current
+// start = position of first quote
+// current = position after last quote
+// With start = 0 and current = 7:
+// substring(1, 6) gives us just "hello" without the quotes
+```
+8. `addToken(STRING, value);` Now we promote our lexeme to a token! nice!
+Full code
+``` java
+private void string()
+    {
+        while (peek() != '"' && !isAtEnd())
+        {
+            if (peek() == '\n') line++;
+            advance();
+        }
+
+        if (isAtEnd())
+        {
+            Lox.error(line, "Unterminated string.");
+            return;
+        }
+
+        // The closing ".
+        advance();
+
+        // Trim the surrounding quotes.
+        String value = source.substring(start + 1, current - 1);
+        addToken(STRING, value);
+    }
+   ```
+### The Default Case
+The default case does a number of checks to determine if the lexeme is a keyword.
+```
+   default:
+   if (isDigit(c))
+   {
+       number();
+   }
+   else if (isAlpha(c))
+   {
+       identifier();
+   }
+   else
+   {
+       Lox.error(line, "Unexpected character.");
+   }
+   break;
+```
+#### `isDigit(c)` Function Explored
+`return c >= '0' && c <= '9';` we ensure that the numerical character is a 0-9 digit
+```   
+ private boolean isDigit(char c)
+    {
+        return c >= '0' && c <= '9';
+    }
+```
+#### `number();` Function
+This function is far more intresting as we actually assign a literal value when creating a token from the string
+1. `while (isDigit(peek())) advance();` `peek()` looks at the current character without consuming it (like looking ahead)
+2. `isDigit(peek())` checks if that character is a number (0-9) While this condition is true:
+3. `advance()` consumes (moves past) the current digit
+4. `if (peek() == '.' && isDigit(peekNext()))` Look for a fractional part. We ensure that we still are encountering a digit after the dot using the `peekNext()`
+5. We use peekNext() to look at the next character without consuming the symbol
+```
+private char peekNext()
+{
+   if (current + 1 >= source.length()) return '\0';
+   return source.charAt(current + 1);
+}
+```
+6. `advance();` Is used to consume the "." for our fractional number
+7. `while (isDigit(peek())) advance();` We continue to `advance()` through the characters until we hit a non digit
+8. `addToken(NUMBER, Double.parseDouble(source.substring(start, current)));` Every number in lox is a float, since we can repersent every number that way "mostly".
+   1. We cast the return type as a `Double`
+   2. We `parseDouble` from the string we are going to create
+   3. We are creating this string from `source`
+   4. `substring` is how we select our string from `source` remember we updated our `start` and `current` index from our `advance()` function
+   5. As a result we create the proper string and add the literal number(The value), and the `NUMBER` token type to our brand new number
+```
+  private void number()
+  {
+
+  while (isDigit(peek())) advance();
+
+        if (peek() == '.' && isDigit(peekNext()))
+        {
+            // Consume the "."
+            advance();
+            while (isDigit(peek())) advance();
+        }
+        // Finally creates the numberical literal and adds it to the list of tokens. This would use the second version of the addToken method.
+        addToken(NUMBER,
+                Double.parseDouble(source.substring(start, current)));
+  }
+  ```
