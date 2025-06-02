@@ -1,23 +1,11 @@
-# JLOX
-
-
-# Chapter 4
+# JLOX Chapter 4
 
 ## File Processing Steps
 Let's take our first real step up the language mountain by finding the trail we'll hike — this trail begins with processing the source file. Once we've read in the source, we can begin creating lexemes and tokens, the foundational pieces of any language.
-
-1. **File Path Resolution**
-   The first step is locating our source file. Think of the "finding a trail analogy," the file path is the trail. We use `Paths.get(path)` to create a Path object that represents the file's location in the file system.
-
-2. **Reading the File**
-   Once we have the path, we read the entire file into memory using `Files.readAllBytes(Path)`. This method efficiently loads all the file contents at once, rather than reading it piece by piece. For our interpreter's purposes, this approach is more efficient as we need access to the entire program during analysis.
-
-3. **Converting to Text**
-   After reading the raw bytes, we need to convert them into a format we can work with. We create a String using the system's default character encoding (typically UTF-8). This conversion transforms the raw bytes into readable text that contains our source code.
-
-4. **Preparing for Lexical Analysis**
-   With our source code now in string format, we pass it to the `run` method. This begins the actual interpretation process, starting with lexical analysis (or "lexing"), where our scanner breaks down the source code into tokens. MAKE SURE TO READ VERY CARFULLY. We are creating lexems and tokens at the same time, instead of doing two pass throughs.
-
+1. The first step is locating our source file. Think of the "finding a trail analogy," the file path is the trail. We use `Paths.get(path)` to create a Path object that represents the file's location in the file system.
+2. Once we have the path, we read the entire file into memory using `Files.readAllBytes(Path)`. This method efficiently loads all the file contents at once, rather than reading it piece by piece. For our interpreter's purposes, this approach is more efficient as we need access to the entire program during analysis.
+3. After reading the raw bytes, we need to convert them into a format we can work with. We create a String using the system's default character encoding (typically UTF-8). This conversion transforms the raw bytes into readable text that contains our source code.
+4. With our source code now in string format, we pass it to the `run` method. This begins the actual interpretation process, starting with lexical analysis (or "lexing"), where our scanner breaks down the source code into tokens. MAKE SURE TO READ VERY CARFULLY. We are creating lexems and tokens at the same time, instead of doing two pass throughs.
 The entire process transforms our source file from raw bytes into tokens that our interpreter can understand and process. This is main point of chapter 4, creating meaningful tokens from raw characters.
 ```C#
 {
@@ -28,16 +16,15 @@ run(new String(bytes, Charset.defaultCharset()));
 ```
 
 ## Creating Our Lexical Analyzer
-Our next exciting adventure is turning our source code into meaningful pieces that our interpreter can understand. We'll break this down into two main steps: creating lexemes and then converting them into tokens.
-
-### The Process
-1. We have our trusty `runFile(String path)` method, which handles our source file. Along the way, we have a helpful companion called `hadError` - a boolean variable in our Lox class that stops us if something goes wrong. 
+- Our next exciting adventure is turning our source code into meaningful pieces that our interpreter can understand. We'll break this down into two main steps: creating lexemes and then converting them into tokens.
+### The Process ofFile Processing and Creating A Scanner
+1. We have our trusty `runFile(String path)` method, which handles our source file. Along the way, we have a helpful companion called `hadError` a boolean variable in our Lox class that stops us if something goes wrong. our source file. Along the way, we have a helpful companion called `hadError` - a boolean variable in our Lox class that stops us if something goes wrong.
 2. The real excitement begins when we create our Scanner object: We're creating a new Scanner and handing it our source code. It's going to examine every character and figure out what it means. Breaking down our source code into meaningful pieces that our interpreter can understand.
 3. Finally, we print out our tokens to make sure everything looks right. It's like a final inspection before sending our tokens on their way to the parser.
-
 ```java
 Scanner scanner = new Scanner(source);
 ```
+The Full `run()` Function
 ```java
 private static void run(String source)
 {
@@ -51,43 +38,39 @@ private static void run(String source)
     }
 }
 ```
-## scanTokens Method The first step into Lexeme and Tokenization
 
-### three tracking variables used for character count for Lexemes 
-
+## scanTokens Method
+1. The first step into Lexeme and Tokenization 
+2. Three tracking variables used for character count for Lexemes
 ```
-// Starting character of the lexeme
+Starting character of the lexeme
 private int start = 0;
-// Current character of the lexeme being evaluated
+Current character of the lexeme being evaluated
 private int current = 0;
-// Current line used for error reporting
+Current line used for error reporting
 private int line = 1;
 ```
 
 ## Notes on `scanTokens()` from *Crafting Interpreters*
-1. **Returning a List of Tokens** 
-It's important to remember that this function ultimately returns a list of tokens. These tokens represent the smallest meaningful elements (lexemes) of the source code — such as identifiers, literals, operators, etc. This list will be consumed later by the parser.
-2. **Control Flow with the `while` Loop**
-3. The `while` loop controls how we move through the source code. It continues scanning tokens until we reach the end of the file. Here's the `isAtEnd()` function that helps determine when to stop:
-4. ```java
+1. It's important to remember that this function ultimately returns a list of tokens. These tokens represent the smallest meaningful elements (lexemes) of the source code — such as identifiers, literals, operators, etc. This list will be consumed later by the parser.
+2. The `while` loop controls how we move through the source code. It continues scanning tokens until we reach the end of the file. Here's the `isAtEnd()` function that helps determine when to stop:
+3. 3.```java
    private boolean isAtEnd()
    {
        return current >= source.length();
    }```
-5. **Tracking Lexeme Boundaries with `start = current;`**
-   The line `start = current;` updates the `start` index to match `current`, marking the beginning of a new lexeme. This update happens at the start of each loop iteration, before scanning the next token. Tracking `start` and `current` separately helps identify the substring for the current token. It’s easy to get confused when these are updated in different places, so I’ll make sure to point out exactly when and why that happens as we go forward.
-6. **Calling `scanToken()`**
-   The `scanToken()` function is called every iteration of the loop. This function is where the actual work of identifying and creating tokens occurs — it examines the current character(s) and builds the appropriate `Token` object based on what it sees. We'll take a deep dive into `scanToken()` shortly, but for now, just know that it’s the core engine of the scanner.
-7. **Adding the End-of-File Token**
+4. 4.**Tracking Lexeme Boundaries with `start = current;`**
+   The line `start = current;` updates the `start` index to match `current`, marking the beginning of a new lexeme. This update happens at the start of each loop iteration, before scanning the next token. Tracking `start` and `current` separately helps identify the substring for the current token. It’s easy to get confused when these are updated in different places, so I’ll make sure to point out exactly when and why that happens as we go forward. 
+5. 5.**Calling `scanToken()`**
+   The `scanToken()` function is called every iteration of the loop. This function is where the actual work of identifying and creating tokens occurs — it examines the current character(s) and builds the appropriate `Token` object based on what it sees. We'll take a deep dive into `scanToken()` shortly, but for now, just know that it’s the core engine of the scanner. 
+6. 6.**Adding the End-of-File Token**
    Once we've scanned all tokens and exited the loop, we add an End-of-File (EOF) token:
    ```
    tokens.add(new Token(EOF, "", null, line));
    ```
-   This token is used to signal that no more tokens remain in the source. Parsers rely on this to know when they’ve reached the end of input.
-8. **Returning the Token List**
-   Finally, we return the complete list of tokens back to the caller — typically a `run()` or `interpret()` function that kicks off the rest of the compilation process (parsing, interpretation, etc.).
-9. **Next Step: Diving into `scanToken()`**
-   We’re making steady progress along the lexing and parsing path. The next big step is to dive into the `scanToken()` function itself. This is where all the real action happens — identifying keywords, numbers, operators, string literals, and more.
+   This token is used to signal that no more tokens remain in the source. Parsers rely on this to know when they’ve reached the end of input. 
+7. Finally, we return the complete list of tokens back to the caller — typically a `run()` or `interpret()` function that kicks off the rest of the compilation process (parsing, interpretation, etc.). 
+8. We’re making steady progress along the lexing and parsing path. The next big step is to dive into the `scanToken()` function itself. This is where all the real action happens — identifying keywords, numbers, operators, string literals, and more.
    Here’s the full `scanTokens()` function for reference:
    ```java
    List<Token> scanTokens()
@@ -101,24 +84,21 @@ It's important to remember that this function ultimately returns a list of token
        return tokens;
    }
    ```
+   
 ## scanToken and some important helper functions
-`char c = advance();` Is the very first thing that happens with in our scan `scanToken` function. Lets take a look at this little helper function. In fact I want you to think of this function as the steps on the trail. Every advance gets us one more step closer to finishing the lexical and tokenization trail.
+- `char c = advance();` Is the very first thing that happens with in our scan `scanToken` function. Lets take a look at this little helper function. In fact I want you to think of this function as the steps on the trail. Every advance gets us one more step closer to finishing the lexical and tokenization trail.
 ### advance()
 1. `source.charAt(current)`:
     - Takes a snapshot of the character at our current position
     - Think of it like placing your finger on a specific letter in a book
     - This is the exact character that is returned before we increment our position
-
 2. `current++`:
     - Increments our position counter
     - Like moving your finger to the next letter
-
 3. `return c`:
     - Returns the character we found
     - This is the character we'll analyze in our scanner
-
 4. Dont get confused we are not incrementing then examining the character we return the character then increment
-
 The complete reference code
 ```java
 private char advance() 
@@ -128,7 +108,7 @@ private char advance()
     return c;
 }
 ```
-### Single character Lexeme
+## Single character Lexeme
 - Single character Lexemes are relatively easy. Remember we are not just creating lexemes. We identify a lexeme and create a token by assigning the lexeme a type. 
 - Remember `Token(TokenType type, String lexeme, Object literal, int line)` Dont be to concerend about the other paramaters as of now. The main point being, that we are finding the token type using the cases
   - Naturally we need to continue our journy by looking at how the `addToken()` function works. This leads to some intresting behavior like java overloading.
@@ -164,10 +144,10 @@ private char advance()
     ```
     
 ### addToken() Function
-1. This is called a method override if only token type is passed then the literal is null. This is because These tokens have meaning through their type alone, and don't need to store any additional value.
-2. The actual function `addToken()` and its invocation type is determined during compile time based on the arguemnts that are passed to the function.
-3. If we call the first `addToken()` which will happen for the above cases, we pass in the type and a null literal
-
+- This is called a method override if only token type is passed then the literal is null. This is because These tokens have meaning through their type alone, and don't need to store any additional value. 
+- The actual function `addToken()` and its invocation type is determined during compile time based on the arguemnts that are passed to the function. 
+- If we call the first `addToken()` which will happen for the above cases, we pass in the type and a null literal
+Full Function
 ```java
 private void addToken(TokenType type)
 {
@@ -183,7 +163,7 @@ private void addToken(TokenType type)
 7. `text` Is the string we just created, in fact text is a lexeme the smallest understandable part for our interpreture.
 8. `literal` This is what gives the lexeme meaning premoting it to token status. Remember we are creating lexemes then turning them into tokens in a single pass, efficency
 9. `line` Is for error reporting not a lot of intresting stuff here
-The full function of addToken()
+Full Function
 ```java
 private void addToken(TokenType type, Object literal)
 {
@@ -193,7 +173,7 @@ private void addToken(TokenType type, Object literal)
 }
 ```
 
-### Lexemes consisting of two characters. 
+## Lexemes consisting of two characters. 
 - `>=` is not two tokens `> =` but actually one token consisting of two characters. There also exist a single token `>` and `=`. This leaves a key question how do we handle these cases approprately
 - Ergo the `match()` function. If the next character is not a match then we have a since instance of our token a `>`, but if the next symbol is a match we have a `>=`
     ```
@@ -215,6 +195,7 @@ private void addToken(TokenType type, Object literal)
 3. This is where the actual matching occurs if the character we are currently at in our source file(**Remember we have already incremented current so we are at the next symbol**) Matches our expected. We have correctly identified our multi character lexeme.
 4. `current++` Is what consumes the symbol and allows us to start the next lexeme. See this is not a token quite yer until we invoke the `addToken()` method
 5. `return true;` If we find the expected symbol then
+Full Function
 ```java
 private boolean match(char expected)
 {
@@ -224,6 +205,7 @@ private boolean match(char expected)
     return true;
 }
 ```
+
 ### Symbols that we can ignore
 - **Remember** if we do not envoke the `addToken()` method our symbol will be consumed without creating a token. This happens until we return a `EOF` token. 
 - The while loop will keep invoking the `scanToken()` function, which first calls the `advance()` function incrementing our current
@@ -293,6 +275,7 @@ private void string()
         addToken(STRING, value);
     }
    ```
+
 ### The Default Case
 The default case does a number of checks to determine if the lexeme is a keyword.
 ```
@@ -358,22 +341,24 @@ private char peekNext()
                 Double.parseDouble(source.substring(start, current)));
   }
   ```
-#### `identifier()`
+
+## `identifier()`
 function handles the lexical analysis of identifiers and keywords in our language. An identifier is any sequence of alphanumeric characters (including underscores) that begins with a letter or underscore.
-1. **Character Consumption** `while (isAlphaNumeric(peek())) advance();`
+1. `while (isAlphaNumeric(peek())) advance();`
    - Continues reading characters as long as they are letters, digits, or underscores
    - For example, in a variable name like `counter1`, it will consume all characters until it hits a non-alphanumeric character
-2. **Lexeme Extraction** `String text = source.substring(start, current)`;
+2. `String text = source.substring(start, current)`;
    - Extracts the complete identifier text from the source code
    - Example: For input `counter1 = 5`, it would extract `"counter1"`
-3. **Keyword Detection**TokenType `type = keywords.get(text);  if (type == null) type = IDENTIFIER;`
+3. TokenType `type = keywords.get(text);  if (type == null) type = IDENTIFIER;`
    - Checks if the extracted text is a reserved keyword (like `if`, `while`, `for`)
    - If it's not a keyword, marks it as a regular IDENTIFIER
    - Example:
       - `while` → Recognized as WHILE token type
-      - `counter1` → Recognized as IDENTIFIER token type
-The function enables our scanner to properly handle both user-defined identifiers (like variable names) and language keywords, distinguishing between them based on the predefined keyword map.
+      - `counter1` → Recognized as IDENTIFIER token type 
+   - The function enables our scanner to properly handle both user-defined identifiers (like variable names) and language keywords, distinguishing between them based on the predefined keyword map.
    - Below is the helpful HashMap we use to compare our keys to find
+
 ```
  static {
         keywords = new HashMap<>();
@@ -394,8 +379,9 @@ The function enables our scanner to properly handle both user-defined identifier
         keywords.put("var",    VAR);
         keywords.put("while",  WHILE);
     }
-```    
-#### Everything else
+```
+
+## Everything else
 Any other characters result in undefined behavior and should be reported to the user
 ```
    else
