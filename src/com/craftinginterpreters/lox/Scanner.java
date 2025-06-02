@@ -1,4 +1,4 @@
-﻿package com.craftinginterpreters.lox;
+package com.craftinginterpreters.lox;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
@@ -41,40 +41,7 @@ public class Scanner
     // Think about it this way, Start is the index of the first character in the lexeme.
     // Also remember that the tokens are stored linearly meaning we read through them one at a time.
     private int start = 0;
-    // Current obviously points to the current character we are observing in the lexeme. Start and current work together on each lexeme
-    /*
-    Source: "let x = 5"
-    Source to better match our indices, its just for vizualization
-              l e t   x   =   5
-    Indices:  0 1 2 3 4 5 6 7 8
-    You can really see the spaces now, thats pretty cool!
-    if you really wanted to be accurate you would add two more indexes for " " and go through the steps to disregard them. Maybe include the EOF encounter. I will save that for the read me
-    1. Processing "let" (indices 0-2):
-       Initial:     start = 0, current = 0   (at 'l')
-       After "let": start = 0, current = 3   (points to space)
 
-    2. Space at index 3:
-       Space is ignored, moves to next character
-
-    3. Processing "x" (index 4):
-       Before:      start = 4, current = 4   (at 'x')
-       After:       start = 4, current = 5   (points to space)
-
-    4. Space at index 5:
-       Space is ignored, moves to next character
-
-    5. Processing "=" (index 6):
-       Before:      start = 6, current = 6   (at '=')
-       After:       start = 6, current = 7   (points to space)
-
-    6. Space at index 7:
-       Space is ignored, moves to next character
-
-    7. Processing "5" (index 8):
-       Before:      start = 8, current = 8   (at '5')
-       After:       start = 8, current = 9   (points past '5')
-
-     */
     private int current = 0;
     // Line keeps track of the current line we are on in the source file to keep track of the line number so we can report errors.
     private int line = 1;
@@ -144,26 +111,26 @@ public class Scanner
                 }
                 break;
             case ' ': case '\r': case '\t':
-                // Ignore whitespace.
-                break;
+            // Ignore whitespace.
+            break;
             case '\n':
                 line++;
                 break;
             case '"': string(); break;
             default:
-            if (isDigit(c))
-            {
-                number();
-            }
-            else if (isAlpha(c))
-            {
-                identifier();
-            }
-            else
-            {
-                Lox.error(line, "Unexpected character.");
-            }
-            break;
+                if (isDigit(c))
+                {
+                    number();
+                }
+                else if (isAlpha(c))
+                {
+                    identifier();
+                }
+                else
+                {
+                    Lox.error(line, "Unexpected character.");
+                }
+                break;
         }
 
     }
