@@ -390,3 +390,109 @@ Any other characters result in undefined behavior and should be reported to the 
    }
    break;
 ```
+
+# Chapter 5 Defining More Complex Repersentation Of Tokens
+"To dwellers in a wood, almost every species of tree has its voice as well as its feature."- Thomas Hardy, Under the Greenwood Tree
+## Understanding Every Tree
+- Just as a hunter learns the different sounds of each type of tree. We are language developers will be able to pick up on the subtle differences between programming lanugages
+- In our scanner’s grammar, the alphabet consists of individual characters and
+## Define
+- In our scanner’s grammar, the alphabet consists of individual characters. The strings are the valid lexemes—roughly “words”. 
+- Now each “letter” in the alphabet is an entire token and a “string” is a sequence of tokens—an entire expression. So 'if' would be a "letter" 'if(bool)' would be a "string"
+## Jlox Grammar
+### Key Grammar Notes
+- A `postfix +` is similar, but requires the preceding production to appear at least once. 
+- A `postfix ?` is for an optional production. The thing before it can appear zero or one time, but not more. 
+- A `postfix *` is for an optional repeat zero or more times. 
+- Instead of repeating the rule name each time we want to add another production for it, we’ll allow a series of productions separated by a pipe (|). `bread → "toast" | "biscuits" | "English muffin"`
+- Further, we’ll allow parentheses for grouping and then allow | within that to select one from a series of options within the middle of a production. `protein → ( "scrambled" | "poached" | "fried" ) "eggs"`
+- A `terminal is a letter from the grammar’s alphabet`. You can think of it like a literal value. In the syntactic grammar we’re defining, the terminals are individual lexemes—tokens coming from the scanner like if or 1234. These are called “terminals”, in the sense of an “end point” because they don’t lead to any further “moves” in the game. You simply produce that one symbol. 
+- A `nonterminal` is a named reference to another rule in the grammar. It means “play that rule and insert whatever it produces here”. In this way, the grammar composes. 
+- If you start with the rules, you can use them to generate strings that are in the grammar. Strings created this way are called `derivations` because each is derived from the rules of the grammar 
+- Rules are called `productions` because they produce strings in the grammar. 
+- There’s one bit of extra metasyntax here. In addition to quoted strings for terminals that match exact lexemes, we CAPITALIZE terminals that are a single lexeme whose text representation may vary. NUMBER is any number literal, and STRING is any string literal. Later, we’ll do the same for IDENTIFIER.
+### Four Expressions
+```
+    Literals. Numbers, strings, Booleans, and nil.
+
+    Unary expressions. A prefix ! to perform a logical not, and - to negate a number.
+
+    Binary expressions. The infix arithmetic (+, -, *, /) and logic operators (==, !=, <, <=, >, >=) we know and love.
+
+    Parentheses. A pair of ( and ) wrapped around an expression.
+```
+### Production Rules
+```
+expression →
+literal
+| unary
+| binary
+| grouping
+
+literal        → NUMBER | STRING | "true" | "false" | "nil" ;
+grouping       → "(" expression ")" ;
+unary          → ( "-" | "!" ) expression ;
+binary         → expression operator expression ;
+operator       → "==" | "!=" | "<" | "<=" | ">" | ">="
+| "+"  | "-"  | "*" | "/" ;
+```
+## Expression Classes 
+- Creating the grammar directly in our code allows us to throw a compiler error if something is encountered outside of the defined language.
+- Each "Letter is a Token" So lets define our letters by creating classes to give them meaning
+- We start with our four expressions. Each expression is a subclass of expression, which will in turn subclass its non-terminal productions.
+- A `Literal` only contains a `value`. This is the simpiliest of our `letters` with in the `Lox` language. 
+- A `Unary` contains an operator AKA `Token` on the left and a Expression AKA `Expr` on the right
+- A `Binary` contains a left operand `Expr` a operator `Token` in the middle and a right operand `Expr` 
+- A `Grouping` simply wraps and `Expr` no need to keep track of the `(` `)` as that is handled by tokens
+```
+abstract class Expr 
+{
+   static class Literal extends Expr 
+   {
+      final Object value;
+   
+      Literal(Object value) 
+      {
+         this.value = value;
+      }
+   }
+   
+   static class Unary extends Expr
+   {
+      final Token operator;  // <-- the "-" or "!" token
+      final Expr right;      // <-- the expression it's applied to
+      
+      Unary(Token operator, Expr right) 
+      {
+         this.operator = operator;
+         this.right = right;
+      }
+   }
+ 
+   static class Binary extends Expr   
+   {
+      final Expr left;
+      final Token operator;
+      final Expr right;
+      
+      Binary(Expr left, Token operator, Expr right) 
+      {
+         this.left = left;
+         this.operator = operator;
+         this.right = right;
+      }
+   }
+   
+   static class Grouping extends Expr
+   {
+      final Expr expression;
+      
+      Grouping(Expr expression) 
+      {
+         this.expression = expression;
+      }
+   }
+   
+   static class binary 
+}
+```
