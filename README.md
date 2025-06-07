@@ -445,54 +445,150 @@ operator       → "==" | "!=" | "<" | "<=" | ">" | ">="
 - A `Binary` contains a left operand `Expr` a operator `Token` in the middle and a right operand `Expr` 
 - A `Grouping` simply wraps and `Expr` no need to keep track of the `(` `)` as that is handled by tokens
 ```
-abstract class Expr 
+abstract class Expr
 {
-   static class Literal extends Expr 
-   {
-      final Object value;
+    static class Binary extends Expr
+    {
+        final Expr left;
+        final Token operator;
+        final Expr right;
+
+        Binary(Expr left, Token operator, Expr right)
+        {
+            this.left = left;
+            this.operator = operator;
+            this.right = right;
+        }
+    }
+
+    static class Grouping extends Expr
+    {
+        final Expr expression;
+
+        Grouping(Expr expression)
+        {
+            this.expression = expression;
+        }
+    }
+
+    static class Literal extends Expr
+    {
+        final Object value;
+
+        Literal(Object value)
+        {
+            this.value = value;
+        }
+    }
+
+    static class Unary extends Expr
+    {
+        final Token operator;
+        final Expr right;
+
+        Unary(Token operator, Expr right)
+        {
+            this.operator = operator;
+            this.right = right;
+        }
+    }
+
+}
+```
+
+## Interpret() Problem
+- We know that each kind of *expression* will behave differently. Thats the whole point of creating tokens to indicate what each lexeme means.
+- That then requires our interpreter to select different chunks of code for each type of expression.
+- Sticking with the OOP mindset we could create a abstract `Interpret()` method and define them in each class.
+-  This would violate our `S.O.L.I.D` principles, no? Here is a review of the solid principles below.
+- Single Responsibility Principle
+- Open/Closed Principle
+- Liskov Substitution Principle
+- Interface Segregation Principle
+- Dependency Inversion Principle.
+- Specifically, pay attention to the Single Responsibility Principle
+- This would require us to define this `Interpret()` method for every single class. It also smushes the behavior together
+```java
+  abstract class Expr
+{ 
+    abstract Interpret();
+   static class Binary extends Expr
+    {
+        final Expr left;
+        final Token operator;
+        final Expr right;
+
+        Binary(Expr left, Token operator, Expr right)
+        {
+            this.left = left;
+            this.operator = operator;
+            this.right = right;
+        }
+        Interpret()
+        {
+            // Binary specific behavior 
+        }
+    }
+}
+```
+
+## Functional Programming Approach
+
+![Functional Programming Table](src/com/craftinginterpreters/Images/table.png)
+- Instead of grouping Binary, Literal, etc., we decide to take another approach and group by Functions:
+- We will group the Function `Interpret()` into its own `Interpret` class
+- We then pattern match the type, and depending on the type we implement the corresponding behavior
+### Class Organization Comparison
+- Before - Classes grouped by rows:
+![Classes By Rows](src/com/craftinginterpreters/Images/rows.png)
+- After - Classes grouped by columns:
+![Classes By Columns](src/com/craftinginterpreters/Images/columns.png)
+- This organization by columns vs rows demonstrates a fundamental difference between *OOP* and *FP* approaches. This concept reflects back to the dwellers in the wood analogy, highlighting a key distinction between these two programming paradigms.
+- The remaining question: How do we program in a *FP* way in an *OOP* environment? This is where the **Visitor Pattern** comes in.
+
+## The Visiter Pattern
+- Take a look at this linkyou
+### Defining The Interface
+- Remember any class that impliments and interface is signing a contract to implement all four methods
+- This is our approach 
+```interface Visitor<R> 
+{
+    R visitBinaryExpr(Binary expr);    // R is the return type
+    R visitGroupingExpr(Grouping expr);
+    R visitLiteralExpr(Literal expr);
+    R visitUnaryExpr(Unary expr);
+}
+
+```
+### The abstract `accept()`
+```abstract <R> T accept(Visitor<R> visitor);```
+- We start by defining an abstract `accept()` method which requires each expression to define.
+- Since we can This method is a generic and as a result should return a generic `T`
+- `(Visitor<R> visitor)`
+- This is the parameter list It takes one parameter named `visitor` 
+- The parameter is of type `Visitor<R>` (using the same type parameter) `T`
+- `Visitor<R>` is a generic interface that defines the visitor pattern operations
+
+### Defining `accept()`
+- Pay carful close attention to the `accept()` method that is being defined in the `Binary` class
+- 
+```class Binary extends Expr 
+{
+   final Expr left;
+   final Token operator;
+   final Expr right;
    
-      Literal(Object value) 
-      {
-         this.value = value;
-      }
+   Binary(Expr left, Token operator, Expr right)
+   {
+      this.left = left;
+      this.operator = operator;
+      this.right = right;
    }
    
-   static class Unary extends Expr
+   @Override
+   <T> T accept(Visitor<T> visitor) 
    {
-      final Token operator;  // <-- the "-" or "!" token
-      final Expr right;      // <-- the expression it's applied to
-      
-      Unary(Token operator, Expr right) 
-      {
-         this.operator = operator;
-         this.right = right;
-      }
+      return visitor.visitBinaryExpr(this);
    }
- 
-   static class Binary extends Expr   
-   {
-      final Expr left;
-      final Token operator;
-      final Expr right;
-      
-      Binary(Expr left, Token operator, Expr right) 
-      {
-         this.left = left;
-         this.operator = operator;
-         this.right = right;
-      }
-   }
-   
-   static class Grouping extends Expr
-   {
-      final Expr expression;
-      
-      Grouping(Expr expression) 
-      {
-         this.expression = expression;
-      }
-   }
-   
-   static class binary 
 }
 ```
