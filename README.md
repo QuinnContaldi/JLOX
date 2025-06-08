@@ -547,31 +547,65 @@ abstract class Expr
 - The remaining question: How do we program in a *FP* way in an *OOP* environment? This is where the **Visitor Pattern** comes in.
 
 ## The Visiter Pattern
-- Take a look at this linkyou
+- Take a look at the [Interpreter Pattern](https://en.wikipedia.org/wiki/Interpreter_pattern). No worries if you dont want to, we go through an example below.
 ### Defining The Interface
-- Remember any class that impliments and interface is signing a contract to implement all four methods
-- This is our approach 
+- The Visitor interface establishes a contract: any implementing class must provide implementations for all four visit methods
+- We use a generic type parameter `R` to allow flexible return types - each visitor implementation can specify its own return type while maintaining the same structure
 ```interface Visitor<R> 
 {
-    R visitBinaryExpr(Binary expr);    // R is the return type
+    R visitBinaryExpr(Binary expr);
     R visitGroupingExpr(Grouping expr);
     R visitLiteralExpr(Literal expr);
     R visitUnaryExpr(Unary expr);
 }
-
 ```
+### Defining The Visitor
+- When implementing the Visitor interface in classes like `AstPrinter`, we must provide concrete implementations for all four visitor methods
+- The return type can be customized based on the visitor's purpose - while one visitor might return strings for printing, another could return numerical values for evaluation
+```   
+class AstPrinter implements Expr.Visitor<String>
+{
+   @Override
+    public String visitBinaryExpr(Expr.Binary expr)
+    {
+        return parenthesize(expr.operator.lexeme,
+                expr.left, expr.right);
+    }
+
+    @Override
+    public String visitGroupingExpr(Expr.Grouping expr)
+    {
+        return parenthesize("group", expr.expression);
+    }
+
+    @Override
+    public String visitLiteralExpr(Expr.Literal expr)
+    {
+        if (expr.value == null) return "nil";
+        return expr.value.toString();
+    }
+
+    @Override
+    public String visitUnaryExpr(Expr.Unary expr)
+    {
+        return parenthesize(expr.operator.lexeme, expr.right);
+    }
+    
+    
+}
+   ```
 ### The abstract `accept()`
 ```abstract <R> T accept(Visitor<R> visitor);```
-- We start by defining an abstract `accept()` method which requires each expression to define.
-- Since we can This method is a generic and as a result should return a generic `T`
-- `(Visitor<R> visitor)`
-- This is the parameter list It takes one parameter named `visitor` 
-- The parameter is of type `Visitor<R>` (using the same type parameter) `T`
-- `Visitor<R>` is a generic interface that defines the visitor pattern operations
-
+- The abstract `accept()` method serves as a contract that all expression subclasses must implement
+- This method utilizes generic typing with type parameter `R` for flexible return types across different visitor implementations
+- The method signature takes a single parameter:
+   - A visitor object of type `Visitor<R>`
+   - The generic parameter `R` is shared between the method and visitor interface
+   - This enables type-safe visitor pattern implementations
 ### Defining `accept()`
 - Pay carful close attention to the `accept()` method that is being defined in the `Binary` class
-- 
+- We accept some `visitor` and call the correct visiter passing it the object its currently visiting
+- We define the behavior in its own visitor class and evoke the proper visitor. This also allows us to reuse this for statements
 ```class Binary extends Expr 
 {
    final Expr left;
@@ -592,3 +626,91 @@ abstract class Expr
    }
 }
 ```
+### Defining Interface Methods
+- Each `Visitor` must implement a `visitBinaryExpr(this)` method as part of the visitor pattern contract
+- This design enables multiple visitor implementations to interact with our expression classes. When an expression invokes `visitBinaryExpr(this)`, it calls the specific implementation defined in the current visitor
+- The visitor pattern allows for diverse behaviors while keeping the expression classes unchanged. Different visitors (like `AstPrinter` or `Interpreter`) can provide their own unique implementations
+- For example, `visitBinaryExpr(this)` in the `AstPrinter` visitor will handle the expression differently than the same method in the `Interpreter` visitor
+
+### Putting It all together through an example
+1. We create an abstract function inside the expression class. Ever expression **Must** Define the `accept` method
+2. Anything the visiter impliments the interface must define the current four methods
+3. For our string printer we extend our visiter interface and define each method. 
+4. When print is called a recursive function happens.`print(expr)` is called with some expression
+6. Inside `print``expr.accept(this) is called`
+```java
+   String print(Expr expr) 
+    {
+        return expr.accept(this);  // 'this' is the AstPrinter instance
+    }
+```
+7. The `accept` method calls the appropriate visit method based on the actual type of the expression `accept`
+8. For example this is the accept method for a Binary expression        
+```java
+    @Override
+    <R> R accept(Visitor<R> visitor)
+    {
+        return visitor.visitBinaryExpr(this);
+    }
+```
+9. The visit method like `visitBinaryExpr` calls `parenthesize`
+10. `parenthesize`calls on sub-expressions `parenthesize``accept`
+```java
+    @Override
+    public String visitBinaryExpr(Expr.Binary expr)
+    {
+        return parenthesize(expr.operator.lexeme,
+            expr.left, expr.right);
+    }
+```
+11. The most crucial part of the code below is the recursion that happens. Note that the accept method
+12. The accept method is called for every expression that was passed. Thus creating a recursive loop.
+13. Its a tough journy to see all in one go. Stick with it, trace your way through the code.
+14. You will find the visitor pattern is not to difficult once you understand its flow. 
+```java
+private String parenthesize(String name, Expr... exprs)
+{
+    // Create a new StringBuilder object to efficiently build the resulting string
+    StringBuilder builder = new StringBuilder();
+    
+    // Add an opening parenthesis and the name parameter to the builder
+    // Example: if name is "+" then builder now contains "(+"
+    builder.append("(").append(name);
+    
+    // Iterate through each expression in the varargs parameter
+    for (Expr expr : exprs)
+    {
+        // Add a space before each expression for formatting
+        builder.append(" ");
+        
+        // Call accept(this) on the expression and append its result
+        // This uses the Visitor pattern to convert the expression to a string
+        builder.append(expr.accept(this));
+    }
+    
+    // Add the closing parenthesis to complete the expression
+    builder.append(")");
+    
+    // Convert the StringBuilder to a String and return it
+    return builder.toString();
+}
+```
+15. 
+```
+print(BinaryExpr[*, UnaryExpr[-123], LiteralExpr[45.67]])
+    → BinaryExpr.accept(AstPrinter)
+     → visitBinaryExpr(BinaryExpr)
+      → parenthesize("*", UnaryExpr[-123], LiteralExpr[45.67])
+       → UnaryExpr[-123].accept(AstPrinter)
+        → visitUnaryExpr(UnaryExpr)
+         → parenthesize("-", LiteralExpr[123])
+          → LiteralExpr[123].accept(AstPrinter)
+           → visitLiteralExpr(LiteralExpr)
+            → returns "123"
+         → returns "(-123)"
+     → LiteralExpr[45.67].accept(AstPrinter)
+      → visitLiteralExpr(LiteralExpr)
+       → returns "45.67"
+    → returns "(* (-123) 45.67)"
+```
+
