@@ -533,7 +533,6 @@ abstract class Expr
 ```
 
 ## Functional Programming Approach
-
 ![Functional Programming Table](src/com/craftinginterpreters/Images/table.png)
 - Instead of grouping Binary, Literal, etc., we decide to take another approach and group by Functions:
 - We will group the Function `Interpret()` into its own `Interpret` class
@@ -695,7 +694,49 @@ private String parenthesize(String name, Expr... exprs)
     return builder.toString();
 }
 ```
-15. 
+### Seeing The Calls in Action
+1. First Call: `print(BinaryExpr[*, UnaryExpr[-123], LiteralExpr[45.67]])`:
+    - left: UnaryExpr[-123]
+    - operator: *
+    - right: LiteralExpr[45.67]
+2. inside `print()` it calls `expr.accept(this)`
+   - The expr is a Binary, so Binary's `accept` method is called 
+   - This calls `visitBinaryExpr(this)` on the `AstPrinter`
+3. `visitBinaryExpr` calls `parenthesize("*", left, right)`
+   - First argument is "*" (the operator)
+   - Second is the left expression (UnaryExpr[-123])
+   - Third is the right expression (LiteralExpr[45.67])
+4. Inside `parenthesize`, for the left expression
+   - Adds "(" and "*"
+   - Now needs to process UnaryExpr[-123]
+   - Calls UnaryExpr[-123].accept(this)
+5. this leads to `visitUnaryExpr`
+   - Calls parenthesize("-", LiteralExpr[123])
+   - Inside this parenthesize call:
+     - Adds "(" and "-"
+     - Processes LiteralExpr[123] by calling accept
+     - visitLiteralExpr returns "123"
+     - Adds ")"
+   - Result is "(-123)"
+6. Back in the first `parenthesize` call
+   - Already has "(*"
+   - Added "(-123)"
+   - Now processes right side: LiteralExpr[45.67]
+   - LiteralExpr.accept calls visitLiteralExpr
+   - Returns "45.67"
+   - Adds final ")"
+7. Result is: `(* (-123) 45.67)`
+### The key points:
+- Each `accept` call determines which `visit` method to call based on the expression type
+- is called to format the expressions `parenthesize`
+- The recursion happens because complex expressions (Binary, Unary) contain other expressions that need to be processed
+- Literal expressions are the "base case" that don't need further processing
+Think of it like unpacking nested boxes:
+- Binary expression is the outer box
+- It contains a UnaryExpr box on the left
+- The UnaryExpr box contains a Literal
+- Each box needs to be opened and processed in the right order to build the final string
+### 
 ```
 print(BinaryExpr[*, UnaryExpr[-123], LiteralExpr[45.67]])
     → BinaryExpr.accept(AstPrinter)
