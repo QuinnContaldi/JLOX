@@ -703,7 +703,7 @@ private String parenthesize(String name, Expr... exprs)
    - The expr is a Binary, so Binary's `accept` method is called 
    - This calls `visitBinaryExpr(this)` on the `AstPrinter`
 3. `visitBinaryExpr` calls `parenthesize("*", left, right)`
-   - First argument is "*" (the operator)
+   - First argument is "*" (the operator). You can think of this as the name of the lexeme
    - Second is the left expression (UnaryExpr[-123])
    - Third is the right expression (LiteralExpr[45.67])
 4. Inside `parenthesize`, for the left expression
@@ -754,4 +754,137 @@ print(BinaryExpr[*, UnaryExpr[-123], LiteralExpr[45.67]])
        → returns "45.67"
     → returns "(* (-123) 45.67)"
 ```
+# Chapter 6 Grammar, which knows how to control even kings
+## Where ambiguity lies
+- (6 / 3) - 1 Or 6 / (3 - 1)
+- Both expressions are with in JLOX language for a binary expression however they yeild different results. 
+- Ambiguity arises because there's no built-in sense of precedence or associativity in the grammar.
+##  Precedence and Associativity
+### A quick note
+- The book offers the best breakdown of the difference. Often I try to rewrite what the author says in my own words. That is the best way to learn
+- However, in this case his definition is so percious and perfect. I could not bring myself to not include his direct qoute
+- I encourage you to read it over and over until its truly fixed in your mind. This is one of the best nuggest of knowldge. 
+### Precedence
+- Precedence determines which operator is evaluated first in an expression containing a mixture of different operators.
+- Precedence rules tell us that we evaluate the / before the - in the above example. 
+- Operators with higher precedence are evaluated before operators with lower precedence. 
+- Equivalently, higher precedence operators are said to “bind tighter”
+### Associativity
+- Associativity determines which operator is evaluated first in a series of the same operator. 
+- When an operator is left-associative (think “left-to-right”), operators on the left evaluate before those on the right. 
+- Most binary operators like `-`, `+`, `*`, `/` are left associative.
+- Since - is *left-associative*, this expression:
+- `a - b - c` Is evaluated as: `(a - b) - c`
+- *Right Associative* (right-to-left)
+- Some operators like assignment (`=`) and unary operators are right associative.
+- `a = b = c` is evaluated as `a = (b = c)`
+### Bringing it all together
+- We force higher-precedence expressions like multiplication/division to be parsed before lower-precedence ones. 
+- This forces higher-precedence expressions (like multiplication/division) to be parsed before lower-precedence ones (like addition/subtraction).
+- The parser cannot "go backward" in precedence levels. 
+- It solves ambiguity by encoding precedence and associativity directly into the grammar structure.
+## Stratified Grammar Enforces Precedence Hierarchy
+```
+expression     → equality ;
+equality       → comparison ( ( "==" | "!=" ) comparison )* ;
+comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
+term           → factor ( ( "-" | "+" ) factor )* ;
+factor         → unary ( ( "/" | "*" ) unary )* ;
+unary          → ( "!" | "-" ) unary | primary ;
+primary        → NUMBER | STRING | "(" expression ")" ;
+Each rule only ever refers to lower-precedence levels. For example:
+
+    term uses factor
+
+    factor uses unary
+
+    unary uses primary
+```
+### The parser Cant Go Backwards
+- It's a little jaring and abstract to say that. This whole chapter is rather abstract. So lets really think through what this means
+- Once you're at a higher-precedence level. You can't jump up to a lower-precedence level and apply a lower-precedence operator
+- Once inside a `factor` which handles(`*` and `/`) you only see `unary` expressions
+- That means you cant parse things that are lower like `term` which handles (`+` and `-`).
+### Back To Our Example
+- 6 / 3 - 1 could have been interpreted in two correct ways in our grammar with out precedence. Now it is constrained to one correct way
+1. We call `parseExpression()` (i.e., start at expression → equality):
+2. We call equality -> comparison 
+3. Comparison -> term
+4. Term → factor ( ( "-" | "+" ) factor )* 
+5. Factor → unary ( ( "/" | "*" ) unary )*
+6. Unary → ( "!" | "-" ) unary | primary ; 
+7. Primary → NUMBER(6) we have our first 6 
+8. Now back in factor, we check the optional ("/" | "*") unary we see a `/`
+9. We then go to the next `unary` we currently have `BinaryExpr(LiteralExpr(6), /, unary)
+10. Unary → ( "!" | "-" ) unary | primary ; 
+11. Primary → NUMBER(3) and we return `BinaryExpr(LiteralExpr(6), "/", LiteralExpr(3))` back up to term
+12. We see a `-` so we consume the symbol
+13. Parse another factor
+14. factor → unary ( ( "/" | "*" ) unary )* ; *means zero or more so we can create a single unary
+15. unary → ( "!" | "-" ) unary | primary ; We can etheir produce `( "!" | "-" ) unary` or `primary`
+16. Primary → NUMBER(1) which is then returned back up
+17. Thus we complete our parsing to have BinaryExpr(BinaryExpr(6, "/", 3), "-", 1)
+```
+    (-)
+   /   \
+ (/)    1
+ /   \
+6     3
+```
+## Why is it called a Recursive Descent Parsar
+- We use recursion to descend through the grammar rules. Note that we returned to `factor` and `term`
+- Each non-terminal becomes a method (like expression(), term(), etc.)
+## Our New Grammar
+- Left recursion is bad as it causes infinite recursion in recursive descent parsers 
+- We fix it by using iteration and rewrite rules using ( ... )* to allow repeated operations without left recursion 
+- Precedence is handled by layering the higher-precedence operators are parsed in deeper levels of the grammar 
+- Final grammar is unambiguous because of the layered structure and rewritten rules
+```
+expression     → equality ;
+equality       → comparison ( ( "!=" | "==" ) comparison )* ;
+comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
+term           → factor ( ( "-" | "+" ) factor )* ;
+factor         → unary ( ( "/" | "*" ) unary )* ;
+unary          → ( "!" | "-" ) unary
+               | primary ;
+primary        → NUMBER | STRING | "true" | "false" | "nil"
+               | "(" expression ")" ;
+               6/3 -1
+               BinaryExpr(
+  BinaryExpr(
+    LiteralExpr(6),
+    '/',
+    LiteralExpr(3)
+  ),
+  '-',
+  LiteralExpr(1)
+)
+which is 
+BinaryExpr
+├── left: BinaryExpr
+│   ├── left: LiteralExpr(6)
+│   ├── operator: '/'
+│   └── right: LiteralExpr(3)
+├── operator: '-'
+└── right: LiteralExpr(1)
+```
+## Some Final Notes About Our Recursive Decent Parsar
+- descent is considered a top-down parser because it starts from the top or outermost grammar rule.
+- It starts from expressions and works its way down into the nested subexpressions before finally reaching the leaves of the syntax tree.
+- A recursive descent parser is a literal translation of the grammar’s rules straight into imperative code. 
+- The descent is described as “recursive” because when a grammar rule refers to itself—directly or indirectly—that translates to a recursive function call.
+- Each rule becomes a function. The body of the rule translates to code roughly like:
+
+| Grammar Notation | Code Representation               |
+|------------------|-----------------------------------|
+| Terminal         | Code to match and consume a token |
+| Nonterminal      | Calls to that rule's function     |
+| \|               | if or switch statement            |
+| * or +           | while or for loop                 |
+| ?                | if statment                       |
+
+
+
+
+
 

@@ -61,7 +61,7 @@ private String parenthesize(String name, Expr... exprs)
     // Convert the StringBuilder to a String and return it
     return builder.toString();
 }
-
+// -123 *45.67 -> (-123)*45.67
     public static void main(String[] args)
     {
         Expr expression = new Expr.Binary(
@@ -69,8 +69,7 @@ private String parenthesize(String name, Expr... exprs)
                         new Token(TokenType.MINUS, "-", null, 1),
                         new Expr.Literal(123)),
                 new Token(TokenType.STAR, "*", null, 1),
-                new Expr.Grouping(
-                        new Expr.Literal(45.67)));
+                new Expr.Literal(45.67));
 
         System.out.println(new AstPrinter().print(expression));
     }
