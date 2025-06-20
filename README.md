@@ -831,7 +831,7 @@ Each rule only ever refers to lower-precedence levels. For example:
  /   \
 6     3
 ```
-## Why is it called a Recursive Descent Parsar
+### Why is it called a Recursive Descent Parsar
 - We use recursion to descend through the grammar rules. Note that we returned to `factor` and `term`
 - Each non-terminal becomes a method (like expression(), term(), etc.)
 ## Our New Grammar
@@ -882,6 +882,63 @@ BinaryExpr
 | \|               | if or switch statement            |
 | * or +           | while or for loop                 |
 | ?                | if statment                       |
+### The First Grammar: Conceptual Overview (Flat and Ambiguous)
+- It is conceptual and shows the kinds of expressions our language supports. This is still helpful for AST or condensing productions
+- However it does not allow us to encode precedence so we should not impilement this in code. Just keep it in the back of your mind
+- It is truly the structure of what expressions we can support
+```
+expression →
+literal
+| unary
+| binary
+| grouping
+
+literal        → NUMBER | STRING | "true" | "false" | "nil" ;
+grouping       → "(" expression ")" ;
+unary          → ( "-" | "!" ) expression ;
+binary         → expression operator expression ;
+operator       → "==" | "!=" | "<" | "<=" | ">" | ">="
+| "+"  | "-"  | "*" | "/" ;
+```
+### The Second Grammar: Precedence-Based Recursive Descent Grammar
+- This is designed for parsing and what we actually map to our code
+- It is handling left-associativity by using loops at each level remember the ()* repersents a loop zero or more! Meowtastic
+```
+expression     → equality ;
+equality       → comparison ( ( "!=" | "==" ) comparison )* ;
+comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
+term           → factor ( ( "-" | "+" ) factor )* ;
+factor         → unary ( ( "/" | "*" ) unary )* ;
+unary          → ( "!" | "-" ) unary
+               | primary ;
+primary        → NUMBER | STRING | "true" | "false" | "nil"
+               | "(" expression ")" ;
+```
+### Expressons is the Abstract Concept- The AST Root
+- `Literal Expr`, `Unary Expr`, `BinaryExpr`, `Grouping Expr` these subclasses are the types of expressions in the AST
+- Remember the `AST` is __different__ from the `Parse Tree` We want the AST to only include the most important constructs
+- Thus our four nodes are the most important constructs while the recursive grammar rules helps us enforce syntax
+### The Recursive Grammar Rules (equality, comparison, etc.) Are Just Parsing Helpers
+- Thats right they are syntactic helpers and just a way to enforce precedence and associativity
+- They are not meaningful for the AST on their own. We look are our expressions subclasses for that meaning
+- We use the Recursive Grmmar Rules to create the correct shape of the `AST` to solve are grammar ambiguity problem.
+## Starting With the code
+### Parser Class
+- `private final List<Token> tokens;` like our `scanner`we take a flat input sequence. However this class reads toekens rather then characters.
+- We store this list of tokens and use `Current` to keep track of which token we are currently on.
+```java
+class Parser
+{
+  private final List<Token> tokens;
+  private int current = 0;
+
+  Parser(List<Token> tokens) 
+  {
+    this.tokens = tokens;
+  }
+}
+```
+### 
 
 
 
