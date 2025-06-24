@@ -29,7 +29,7 @@ public class RPNAstPrinter implements Expr.Visitor<String> {
     }
 
     // This method takes a name string and variable number of Expr objects as parameters
-// The varargs syntax (Expr...) allows passing multiple Expr objects as separate arguments
+    // The varargs syntax (Expr...) allows passing multiple Expr objects as separate arguments
     private String parenthesize(String name, Expr... exprs) {
         // Create a new StringBuilder object to efficiently build the resulting string
         StringBuilder builder = new StringBuilder();

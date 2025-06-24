@@ -1,6 +1,67 @@
-# JLOX Chapter 4
+# [Crafting Interpreters By Robert Nystrom](https://craftinginterpreters.com/)
+---
+## 🌟 Why This Book Matters to Me
+*Crafting Interpreters* by Robert Nystrom has had a profound impact on my growth as a programmer. I was fortunate that my mentor recommended it to me — an act that truly changed my direction in life and deepened my appreciation for programming languages.
+At first, I was too overwhelmed with classes and projects to give the book the attention it deserved. But after completing my senior projects, I finally had a free summer, and I knew it was the perfect time to dive in.
+I was preparing to continue my work as a research assistant in academic programming languages and take a graduate-level compilers course in the fall. What better way to prepare than by learning from one of the most beloved books on the subject?
+I won’t lie I was nervous. Compilers have a reputation, especially among undergrads. At my university, the compilers course hadn’t been offered in six years until my mentor decided to revive it.
+Instead, most students (including myself) took **Automata and Formal Languages**, a class infamous for its difficulty. It was tough: 60% of the grade came from 10 in-person quizzes, and the remaining 40% was the final exam. Many of us were just hoping for a passing grade.
+But my friends and I welcomed the challenge we had already taken **Game Engine Architecture**, another one of the toughest classes offered. It was in that class that I met my mentor. So, we dove in headfirst, and to our surprise, we walked away with A’s and B’s.
+It was during *Automata* that I began to develop a deep respect for programming language theory. It was like finishing a marathon brutal, but incredibly rewarding. And I knew I wanted to keep running.
+Reading *Crafting Interpreters* felt like the next natural step. The book helped me understand not just the technical side of interpreters, but the elegance of language design.
+This repository documents my learning. It’s filled with notes, explanations, and code as I explore and implement my own interpreter based on Robert Nystrom's JLOX. It's also a way to share what I’ve learned with others who might be on a similar journey.
+However, this is more than just a study guide it’s a showcase of my dedication, curiosity, and commitment to growth as a programmer. If you're a recruiter visiting from my resume, I hope these notes give you a glimpse into the wonderful world of programming languages.
+I also hope this repository is like a glass of fresh water after all the calculator apps and ChatGPT wrapper projects you may have seen. Not that those projects are wrong we all start somewhere, but a little language from a great book is exciting.
+I really hope this repository inspires you to look deeper into the languages we use every day. Regardless, I’m proud of what I’ve built here. It’s been the highlight of my summer and one of the most rewarding programming experiences I’ve had so far.
+---
+## 💌 A Message to the Author
+To Robert Nystrom — thank you. Your work has inspired me deeply. I was so grateful for the free web version of the book that I bought a physical copy to support you. You’ve created something truly special, and I hope more developers find it and are inspired as I have been.
+If anyone reading this has enjoyed these notes or learned from them, I strongly encourage you to visit the author’s website:
+👉 [https://craftinginterpreters.com](https://craftinginterpreters.com)
+---
+## Extra Resources That Are Also Used
+1. \:green\_book: [Engineering a Compiler, 3rd Edition](https://www.amazon.com/Engineering-Compiler-Keith-D-Cooper-dp-0128154128/dp/0128154128/ref=dp_ob_title_bk)
+    * A modern compiler construction textbook used in my graduate compilers course. It goes deeper into code generation, optimization, and runtime systems, helping bridge the gap between interpreters (as covered in *Crafting Interpreters*) and full compiler pipelines.
+    * Topics include semantic elaboration, control flow translation, code shape, and register allocation — essential for understanding how high-level syntax becomes executable machine code.
 
-## File Processing Steps
+2. \:blue\_book: [An Introduction to Formal Languages and Automata, 7th Edition](https://www.jblearning.com/catalog/productdetails/9781284231601?srsltid=AfmBOor_LG5CsmjrTsjRq3gkfZp7SCaGOGg8Zn_uVAMoXPEpZ-AiiiMr)
+    * A foundational theory textbook that expands on the automata, grammars, and parsing theory briefly touched upon in *Crafting Interpreters*.
+    * It covers topics like DFA/NFA, regular languages, context-free grammars, and parsing — especially useful for understanding the formal structures behind lexical analysis and syntax trees.
+
+3. \:orange\_book: [Programming Language Pragmatics, 5th Edition](https://mlscott14627.github.io/PLP5e_online/)
+    * A comprehensive book on programming language design and implementation. It explores how different language features are expressed and executed, reinforcing the connection between theory and practice.
+    * Useful for understanding semantics, type systems, concurrency, runtime memory models, and design tradeoffs. Shows how other real-world languages handle similar constructs.
+---
+- [Scanning and Tokenization](#scanning-and-tokenization)
+    - [File Processing](#file-processing)
+    - [Lexemes and Tokens](#lexemes-and-tokens)
+    - [The Scanner Class](#the-scanner-class)
+    - [Token Matching](#token-matching)
+    - [Tokenizing Strings, Numbers, Identifiers](#tokenizing-strings-numbers-identifiers)
+
+- [Representing Code in the AST](#representing-code-in-the-ast)
+    - [Grammar Overview](#grammar-overview)
+    - [Expression Types](#expression-types)
+    - [The Expr Classes](#the-expr-classes)
+    - [Functional vs OOP Organization](#functional-vs-oop-organization)
+
+- [Visitor Pattern](#visitor-pattern)
+    - [Why Visitor Pattern?](#why-visitor-pattern)
+    - [Interface and Accept Method](#interface-and-accept-method)
+    - [AstPrinter Example](#astprinter-example)
+
+- [Parsing Expressions (Recursive Descent)](#parsing-expressions-recursive-descent)
+    - [Ambiguity in Grammar](#ambiguity-in-grammar)
+    - [Precedence and Associativity](#precedence-and-associativity)
+    - [The Recursive Grammar Rules](#the-recursive-grammar-rules)
+    - [AST vs Parse Tree](#ast-vs-parse-tree)
+    - [Parser Implementation](#parser-implementation)
+
+- [Further Chapters (7+)](#further-chapters)
+    - [Ch. 7 Notes Placeholder](#ch-7-notes-placeholder)
+    - [Ch. 8 Notes Placeholder](#ch-8-notes-placeholder)
+# Scanning and Tokenization
+## File Processing
 Let's take our first real step up the language mountain by finding the trail we'll hike — this trail begins with processing the source file. Once we've read in the source, we can begin creating lexemes and tokens, the foundational pieces of any language.
 1. The first step is locating our source file. Think of the "finding a trail analogy," the file path is the trail. We use `Paths.get(path)` to create a Path object that represents the file's location in the file system.
 2. Once we have the path, we read the entire file into memory using `Files.readAllBytes(Path)`. This method efficiently loads all the file contents at once, rather than reading it piece by piece. For our interpreter's purposes, this approach is more efficient as we need access to the entire program during analysis.
@@ -342,7 +403,7 @@ private char peekNext()
   }
   ```
 
-## `identifier()`
+## Tokenizing Strings, Numbers, Identifiers
 function handles the lexical analysis of identifiers and keywords in our language. An identifier is any sequence of alphanumeric characters (including underscores) that begins with a letter or underscore.
 1. `while (isAlphaNumeric(peek())) advance();`
    - Continues reading characters as long as they are letters, digits, or underscores
@@ -391,7 +452,7 @@ Any other characters result in undefined behavior and should be reported to the 
    break;
 ```
 
-# Chapter 5 Defining More Complex Repersentation Of Tokens
+# Chapter 5: Representing Code
 "To dwellers in a wood, almost every species of tree has its voice as well as its feature."- Thomas Hardy, Under the Greenwood Tree
 ## Understanding Every Tree
 - Just as a hunter learns the different sounds of each type of tree. We are language developers will be able to pick up on the subtle differences between programming lanugages
@@ -828,8 +889,8 @@ Each rule only ever refers to lower-precedence levels. For example:
     (-)
    /   \
  (/)    1
- /   \
-6     3
+ /  \
+6    3
 ```
 ### Why is it called a Recursive Descent Parsar
 - We use recursion to descend through the grammar rules. Note that we returned to `factor` and `term`
@@ -849,6 +910,7 @@ unary          → ( "!" | "-" ) unary
                | primary ;
 primary        → NUMBER | STRING | "true" | "false" | "nil"
                | "(" expression ")" ;
+               
                6/3 -1
                BinaryExpr(
   BinaryExpr(
@@ -922,6 +984,43 @@ primary        → NUMBER | STRING | "true" | "false" | "nil"
 - Thats right they are syntactic helpers and just a way to enforce precedence and associativity
 - They are not meaningful for the AST on their own. We look are our expressions subclasses for that meaning
 - We use the Recursive Grmmar Rules to create the correct shape of the `AST` to solve are grammar ambiguity problem.
+
+## Some extended notes 
+| Concept                        | Purpose                                                                                     | Example                                                        |                    |
+| ------------------------------ | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ------------------ |
+| **Recursive Grammar Rules**    | Control *how* we parse expressions and enforce precedence and associativity.                | \`term → factor ( ( "-"                                        | "+" ) factor )\*\` |
+| **AST Node Types**             | Represent *what* the expression **means** (semantically) and how it’s evaluated at runtime. | `Binary(Literal(2), "+", Binary(Literal(3), "*", Literal(4)))` |                    |
+| **Parse Tree**                 | Shows every single rule used in the parse, including intermediate helpers.                  | Includes all: equality → comparison → term, etc.               |                    |
+| **AST (Abstract Syntax Tree)** | Condensed representation that strips away unnecessary grammar noise.                        | Only includes: `Binary`, `Literal`, `Grouping`, `Unary`, etc.  |                    |
+
+## The Conceptual Grammar (for human understanding)
+`expression → literal | unary | binary | grouping`
+- This grammar describes the types of expressions our language supports. 
+- It is ambiguous and does not encode precedence or associativity. 
+- Useful for thinking about what our language can express — but not suitable for writing a parser directly.
+### The Recursive Descent Grammar (used in code)
+```
+expression     → equality ;
+equality       → comparison ( ( "!=" | "==" ) comparison )* ;
+comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
+term           → factor ( ( "-" | "+" ) factor )* ;
+factor         → unary ( ( "/" | "*" ) unary )* ;
+unary          → ( "!" | "-" ) unary | primary ;
+primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
+
+```
+- These rules are not semantic constructs. You will never have a TermNode or FactorNode in your AST.
+- Imagine our parser catgirl saying "Make sure we parse things in the correct precedence and associativity order"
+- This grammar is strictly structured to enforce precedence and associativity. 
+- It descends through rules from lowest precedence (equality) to highest (primary). 
+- Each level uses loops (()*) to encode left associativity.
+### AST Node Type
+- This is the real meaning behind so think that now when you're in the parser, and you find: term → factor "+" factor
+- BinaryExpr(Literal(1), "+", BinaryExpr(Literal(2), "*", Literal(3)))
+
+
+
+
 ## Starting With the code
 ### Parser Class
 - `private final List<Token> tokens;` like our `scanner`we take a flat input sequence. However this class reads toekens rather then characters.
