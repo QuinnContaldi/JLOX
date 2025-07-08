@@ -1,0 +1,50 @@
+```markdown
+# Parser Flow Overview
+
+```
+
+parse()                     // Entry point: parse entire program
+├─ Loop: while not end of file
+│    └─ declaration()       // Try to parse a declaration or fallback to statement
+│         ├─ if 'var' token found
+│         │    └─ varDeclaration()
+│         ├─ if 'fun' token found (later chapter)
+│         │    └─ functionDeclaration()
+│         ├─ if 'class' token found (later chapter)
+│         │    └─ classDeclaration()
+│         └─ else
+│              └─ statement()          // Parse a statement if no declaration matched
+│                   ├─ if 'print' token found
+│                   │    └─ printStatement()
+│                   ├─ if block start ('{')
+│                   │    └─ blockStatement()
+│                   └─ else
+│                        └─ expressionStatement()  // Try to parse expression statement
+│                              └─ expression()
+│                                    ├─ assignment()
+│                                    ├─ equality()
+│                                    └─ ... (other expression rules)
+│
+└─ Returns List<Stmt> — AST for entire program
+
+Error Handling:
+
+* If expression() or statement() fails to parse a valid construct:
+  └─ syntax error is reported
+  └─ parser attempts to recover (synchronize()) and continue parsing
+
+```
+
+---
+
+### Explanation:
+
+- `parse()` repeatedly calls `declaration()` until the file is fully consumed.
+- `declaration()` tries to parse special declarations like `var`, falling back to `statement()`.
+- `statement()` tries different kinds of statements; if none match, tries `expressionStatement()`.
+- `expressionStatement()` relies on `expression()` which parses all valid expressions.
+- If parsing fails at any point, an error is reported and the parser tries to recover.
+
+---
+
+```
