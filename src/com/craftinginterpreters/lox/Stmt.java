@@ -11,6 +11,7 @@ abstract class Stmt
             R visitPrintStmt(Print stmt);
             R visitVarStmt(Var stmt);
     }
+
     static class Block extends Stmt
     {
         final List<Stmt> statements;

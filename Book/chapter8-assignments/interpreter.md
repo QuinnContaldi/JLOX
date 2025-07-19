@@ -815,23 +815,346 @@ throw new RuntimeError(name,
 - The text of the program itself shows where the scope begins and ends
 - Variables are considered lexically scoped. 
 
-###
+### Example
+- We can tell which `AnimalGirl` is being used based on the block of our scope
+```
+{
+  var AnimalGirl = "CatGirl";
+  print AnimalGirl; // "CatGirl".
+}
 
+{
+  var AnimalGirl = "FoxGirl";
+  print AnimalGirl; // "FoxGirl".
+}
+```
 
+## Dynamically scoped 
+- "This is in contrast to dynamic scope where you don’t know what a name refers to until you execute the code."
+- Methods and fields are dyncamically scoped take in consideration the following example 
+```
+class CatGirl extends AnimalGirl
+{
+    MakeSound()
+    {
+        print "MEOWWWWW";
+    }
+}
 
+class FoxGirl extends AnimalGirl
+{
+    MakeSound()
+    {
+        print "Ring-ding-ding-ding-dingeringeding! Gering-ding-ding-ding-dingeringeding! Gering-ding-ding-ding-dingeringeding!
+               "Wa-pa-pa-pa-pa-pa-pow! Wa-pa-pa-pa-pa-pa-pow! Wa-pa-pa-pa-pa-pa-pow!
+                Hatee-hatee-hatee-ho!  Hatee-hatee-hatee-ho!  Hatee-hatee-hatee-ho!"
+                Joff-tchoff-tchoffo-tchoffo-tchoff! Tchoff-tchoff-tchoffo-tchoffo-tchoff! Joff-tchoff-tchoffo-tchoffo-tchoff!"
+    }
+}
 
+fun AnimalGirlSound(AnimalGirl girl) {
+  girl.MakeSound();
+}
+```
+- We dont know if `girl.MakeSound()` will play the FoxGirl or CatGirl sound
+- This is figured out during run time when one of the two classes is passed to the function
+- Scope and environment are related 
+- Scope is the theoretical part
+- environment is how we actually implement it 
 
+## Blocks
+- The beginning of a block is created by {}
+- Any variables declared inside the {} disapiers
+- Consider the Following 
+```
+{
+  var a = "in block";
+}
+print a; // Error! No more "a".
+```
 
+# Nesting and Shadowing
+- So how would we keep track of variables with the same name
+- We may be tempted to delete the environment after the {} AKA block ends
+- Consider this example 
+```
+// What programing language 
+var rust = "Rust";
 
+// Degrading Steel Rate
+{
+    // Rust per second at 100% the metal degrades 
+    Var rust = 0.2;
+    RustRate += deltatime * rust;
+}
+```
+- If we discard the previous block we would delete the programming language `Rust`
+- That would mean we would only keep the 
+- "When a local variable has the same name as a variable in an enclosing scope it shadows the outer one. 
+- Code inside the block can’t see it any more—it is hidden in the “shadow” cast by the inner one—but it’s still there."
+- This may seem confusing at first so lets do some work to directly break down what we mean by shadowing.
 
+### Shadowing
+- When we enter a new block scope we save the varibles from the outer block scope
+- We do that by defining new variables only containing the values of the inner block scope 
+- When we exit the block, we discard its environment and restore the previous one.
+- What bout the varibles that are not shadowed
+```
+var global = "outside";
+{
+    var local = "inside";
+    print global + local;
+}
+```
 
+### Evocative cactus stack
+- This is how we keep track of our environment, consider the following example.
+- During execution, we may only follow one path. Global goes into outer etc...
+- This linear execution follows our single pass compiler structure
+```
+Inner Block
+  ↑
+  Middle Block
+  ↑
+  Outer Block
+  ↑
+  Global
+```
+- However, This can form a tree like structure when building our evocative cactus stack
+- This help picture will help demonstrate the point. Our global scope will have multiple enter points into outer blocks
+- Outer blocks can contain multiple middle blocks. Even Middle blocks can contain Inner blocks
+- Each block will have a pointer to its parent environment above it. This way we may return to the outer block scope.
+- It’s called a cactus stack because it’s like a tree, but with a twist:
+- Each node only points to one parent. 
+- Multiple branches can share the same parent. 
+- If you draw the full lifetime of all environments created, it looks like a tree where each branch is a chain of scopes and, different branches "grow" off the same stem.
 
+### Another Example
+#### Structure
+| Concept              | What it Means                                                                                                             |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Cactus Stack**     | A tree where each environment points to one parent, and multiple children may share a parent (like branches on a cactus). |
+| **During Execution** | The interpreter only ever walks **one path** down the tree, making it act like a **linear chain**.                        |
+| **Block Nesting**    | Inner blocks can contain inner blocks, creating deeper chains during execution.                                           |
+| **Why "Cactus"?**    | Because the tree has shared parents and looks like a cactus with branches that only point *up*.                           |
+```
+{
+    var a = "CatGirl";
+    {
+        var b = "FoxGirl";
+        {
+            var c = "WolfGirl";
+        }
+    }
+    {
+        var d = "MouseGirl";
+    }
+}
+#### Declare Block
+```
+1. *Global Environment*: Is the Starting Point.
+2. *Block A*: The outer `{}` contains all other blocks. This declares an `a`
+3. *Block B*: First nested block declares `b`
+4. *Block C*: Nested inside Block B declares block c
+5. *Block D*: A sibiling of Block B declares block d
 
+#### Tree Organization
+Remember this is not the execution order as the execution order is linear
+```
+        [Global]
+            |
+        [Block A] -- declares a
+           /   \
+ [Block B]     [Block D]
+     |             |
+[Block C]        (end)
 
+```
+#### Execution Order
+- Our execution only walks one path at a time.
+- The stack temporarily becomes a linear chain before returing up.
+- I’m in Block C, and I can find enclosing scopes by following the chain backward.”
+- `[Block C] → [Block B] → [Block A] → [Global]`
+- Then when Block C ends, you pop back to:
+- `[Block B] → [Block A] → [Global]`
+- Then pop Block B, and go into Block D:
+- `[Block D] → [Block A] → [Global]`
+- This may feel weird, as if we are going backwards. However this is the execution chain
+- Lets take another look at the execution chain
 
+#### Think of this like a call stack 
+At the deepest point (inside Block C), the interpreter is using the environment created for C, which points to B, which points to A, which points to Global.
+```
+push Block A
+  push Block B
+    push Block C
+    pop Block C
+  pop Block B
+  push Block D
+  pop Block D
+pop Block A
+```
+## Enviorments 
+- When looking for a varible we search the local block first
+- If we cant find it, we continue to the parent block and so on
+- We acomplish this by adding the `enclosing`
+```
+class Environment {
 
+lox/Environment.java
+in class Environment
 
+  final Environment enclosing;
 
+  private final Map<String, Object> values = new HashMap<>();
+
+```
+### Intilization 
+- As a result when a new enviorment is created a reference to the outer block must be captured
+- However the null enclosing `Environment` is reserved for the global enviorment which is the outer most block!
+- The other constructor creates a new local scope nested inside the given outer one.
+```
+ Environment() {
+    enclosing = null;
+  }
+
+  Environment(Environment enclosing) {
+    this.enclosing = enclosing;
+  }
+```
+### Get Method 
+1. Look for the variable name in the current map
+2. If its not there but we have an enclosing reference then search that enclosing for the variable 
+3. Repeat until either:
+   * The variable is found. 
+   * Or there’s no more enclosing environment (at the global scope), in which case throw an error.
+```
+Object get(Token name) {
+  if (values.containsKey(name.lexeme)) {
+    return values.get(name.lexeme);  // Found it here
+  }
+
+  if (enclosing != null) {
+    return enclosing.get(name);  // Try outer scope
+  }
+
+  throw new RuntimeError(name, "Undefined variable '" + name.lexeme + "'.");
+}
+```
+- You may ask, "What about assigning variables."
+- You only assign in the local environment if the variable already exists there. 
+- If it doesn’t, the interpreter walks up the chain to find where it was originally declared then assigns it.
+
+### A new grammar
+- "Now that Environments nest, we’re ready to add blocks to the language. Behold the grammar:"
+- So anywhere that statements can go! A block can go
+- Remember our blocks dont return anything, They do something, That something is scoping!
+-  `"Block      : List<Stmt> statements",`
+- Something interesting is what we contain a list of statements inside a block
+- This resembles a microprogram! A program with in a program. Our wonderful segmented pieces of code
+```
+statement      → exprStmt
+               | printStmt
+               | block ;
+
+block          → "{" declaration* "}" ;
+
+```
+
+### Detecting the list of statements with in blocks
+- "We detect the beginning of a block by its leading token—in this case the {. In the statement() method, we add:"
+- ` if (match(LEFT_BRACE)) return new Stmt.Block(block());` in parser file
+
+### The Real Work
+1. This function is called after matching `LEFT_BRACE` This will store all the parsed statements found inside the {} block.
+   - This is a **helper function** inside the parser.
+   - It returns a `List<Stmt>`—a list of parsed **statements** that are inside the block.
+   - It does **not** return a `Stmt.Block` directly because this method is used by a **higher-level parser rule** that wraps it in a `Stmt.Block` node.
+2. `while (!check(RIGHT_BRACE) && !isAtEnd()) { statements.add(declaration());}`
+   - This loop runs as long as:
+     - The current token is **not** a closing brace (`}`), and
+     - We haven’t reached the end of the file.
+   - Inside the loop:
+     - It keeps parsing **declarations** (like `var`, `fun`, or other statements).
+     - Each parsed statement is added to the list.
+   - After all inner statements are parsed, we expect and require a } to close the block. 
+   - If the next token isn't }, consume() throws a parsing error with the message "Expect '}' after block."
+3.  Finally, it returns the list of parsed statements.
+   - This list will be wrapped into a `Stmt.Block` node by the calling rule, usually something like:
+   - So it keeps adding statements from inside the block until it hits the closing brace (`}
+```
+  private List<Stmt> block() {
+    List<Stmt> statements = new ArrayList<>();
+
+    while (!check(RIGHT_BRACE) && !isAtEnd()) {
+      statements.add(declaration());
+    }
+
+    consume(RIGHT_BRACE, "Expect '}' after block.");
+    return statements;
+  }
+```
+
+### Visitor Pattern Environments
+- This creates a new scope (a new Environment) for the block. 
+- It encloses the current environment (the outer one), forming a chain. 
+- Variables declared inside the block will go into this new environment. 
+- Lookups and assignments can still reach outer environments if needed. 
+- executeBlock(...)
+  - This helper method takes:
+  - The list of statements inside the block (stmt.statements)
+  - The new inner environment 
+  - It temporarily switches to the new environment, executes each statement, then restores the old environment.
+```
+@Override
+public Void visitBlockStmt(Stmt.Block stmt)
+{
+    executeBlock(stmt.statements, new Environment(environment));
+    return null;
+}
+```
+### Execute Block
+- Switch to the new inner environment. 
+- This is usually passed in from visitBlockStmt() like this:
+- new Environment(currentEnvironment)
+- Any new variables declared during block execution go into this new environment.
+- This runs **each statement** in the block one by one.
+- While running them, the interpreter uses the new `environment` for variable lookup and definition.
+```
+ void executeBlock(List<Stmt> statements,
+                    Environment environment) 
+{
+    Environment previous = this.environment;
+    try 
+    {
+        this.environment = environment;
+        for (Stmt statement : statements) 
+        {
+            execute(statement);
+        }
+    } 
+    finally
+    {
+        this.environment = previous;
+    }
+}
+```
+
+### Example Environment
+- At runtime:
+- The outer a is defined in the global environment. 
+- The inner a is defined in a new block environment that encloses the global one. 
+- executeBlock() switches to the inner environment, runs the block, then switches back. 
+- So the variable a inside the block is shadowing the outer one—exactly as expected in lexical scoping.
+Given this Lox code:
+```
+var a = "global";
+{
+    var a = "block";
+    print a; // prints "block"
+}
+print a; // prints "global"
+```
 
 # Helper Functions 
 ### evaluate
@@ -845,7 +1168,7 @@ throw new RuntimeError(name,
 ```
 public Void visitPrintStmt(Stmt.Print stmt)
 {
-    Object value = evaluate(stmt.expression);
+    O22bject value = evaluate(stmt.expression);
     System.out.println(stringify(value));
     return null;
 }

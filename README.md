@@ -594,15 +594,15 @@ abstract class Expr
 ```
 
 ## Functional Programming Approach
-![Functional Programming Table](src/com/craftinginterpreters/Images/table.png)
+![Functional Programming Table](Book/Images/table.png)
 - Instead of grouping Binary, Literal, etc., we decide to take another approach and group by Functions:
 - We will group the Function `Interpret()` into its own `Interpret` class
 - We then pattern match the type, and depending on the type we implement the corresponding behavior
 ### Class Organization Comparison
 - Before - Classes grouped by rows:
-![Classes By Rows](src/com/craftinginterpreters/Images/rows.png)
+![Classes By Rows](Book/Images/rows.png)
 - After - Classes grouped by columns:
-![Classes By Columns](src/com/craftinginterpreters/Images/columns.png)
+![Classes By Columns](Book/Images/columns.png)
 - This organization by columns vs rows demonstrates a fundamental difference between *OOP* and *FP* approaches. This concept reflects back to the dwellers in the wood analogy, highlighting a key distinction between these two programming paradigms.
 - The remaining question: How do we program in a *FP* way in an *OOP* environment? This is where the **Visitor Pattern** comes in.
 

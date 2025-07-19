@@ -1,0 +1,4 @@
+var Animal_Girl = "Cat_Girl";
+Animal_Girl = "Fox_Girl";
+var math = 5 + 3;
+print(3 + math);
