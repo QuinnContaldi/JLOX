@@ -6,13 +6,14 @@ abstract class Expr
 {
   interface Visitor<R>
     {
-            R visitAssignExpr(Assign expr);
-            R visitBinaryExpr(Binary expr);
-            R visitGroupingExpr(Grouping expr);
-            R visitLiteralExpr(Literal expr);
-            R visitUnaryExpr(Unary expr);
-            R visitVariableExpr(Variable expr);
+        R visitAssignExpr(Assign expr);
+        R visitBinaryExpr(Binary expr);
+        R visitGroupingExpr(Grouping expr);
+        R visitLiteralExpr(Literal expr);
+        R visitUnaryExpr(Unary expr);
+        R visitVariableExpr(Variable expr);
     }
+
     static class Assign extends Expr
     {
         final Token name;

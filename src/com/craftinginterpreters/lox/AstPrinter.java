@@ -161,7 +161,7 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String>
 
     public static void main(String[] args)
     {
-        String path = "src/com/craftinginterpreters/lox/LoxProgram.txt";
+        String path = "src/com/craftinginterpreters/lox/LoxASTPrinter.txt";
         try {
             // We pass in our source file
             String source = new String(Files.readAllBytes(Paths.get(path)));

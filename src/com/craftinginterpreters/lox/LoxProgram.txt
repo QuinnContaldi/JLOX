@@ -1,6 +1,6 @@
-var x = "Cat";
+var x = "CatGirl";
 print(x);
 {
- x = "Dog";
+ x = "DogGirl";
  print(x);
 }
